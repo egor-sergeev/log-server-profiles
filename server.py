@@ -7,7 +7,7 @@ app = Flask(__name__)
 api = Api(app)
 
 # TODO Authentication of Graphica's web client (instead of '*')
-cors = CORS(app, resources={r'/log*': {'origins': '*'}})
+cors = CORS(app, resources={r'/log*': {'origins': '*'}, r'/docs/': {'origins': '*'}})
 
 db = DatabaseInterface(username='default', password='password')
 
