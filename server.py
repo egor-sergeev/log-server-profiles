@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_restful import Resource, Api, reqparse
 from flask_cors import CORS
 from database_interface import DatabaseInterface
@@ -36,6 +36,12 @@ class Logs(Resource):
 
 
 api.add_resource(Logs, '/log/', '/log')
+
+
+@app.route('/docs/')
+def render_static():
+    return render_template('index.html')
+
 
 if __name__ == "__main__":
     app.run(debug=True)

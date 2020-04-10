@@ -1,5 +1,3 @@
-from infi.clickhouse_orm.database import Database
-from models import UserAction, UserActionBuffer
 from database_interface import DatabaseInterface
 
 
