@@ -12,7 +12,7 @@ class UserAction(models.Model):
     action_type = fields.Enum8Field(ActionType)
     value = fields.NullableField(fields.Int32Field(default=None))
     timestamp = fields.UInt64Field()
-    datetime = fields.DateTimeField(materialized='Cast(timestamp AS DateTime)')
+    datetime = fields.DateTimeField(materialized='Cast(timestamp / 1000 AS DateTime)')
 
     engine = engines.MergeTree('datetime', ('user_id', 'timestamp'))
 

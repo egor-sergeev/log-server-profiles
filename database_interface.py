@@ -30,9 +30,9 @@ class DatabaseInterface:
         data = {
             'user_id': 'd2784698-a30a-4794-86b2-616e6f141b91',
             'object_type': 'image',
-            'object_id': 'a31d8de8-85a9-4520-959d-c8d907e2a1e6',
+            'object_id': 'c95bbc70-aeb3-42b4-9c69-9fbdaedf3860',
             'action_type': 'click',
-            'timestamp': 1586468624667,
+            'timestamp': 1586161549789,
         }
         self.insert_log(data)
 
@@ -42,6 +42,6 @@ class DatabaseInterface:
                                      object_id=data['object_id'],
                                      action_type=data['action_type'],
                                      value=data['value'],
-                                     timestamp=int(data['timestamp']) / 1000)
+                                     timestamp=int(data['timestamp']))
 
         self.db.insert([log_entry])

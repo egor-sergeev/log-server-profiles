@@ -28,7 +28,11 @@ class Logs(Resource):
         for field in db.get_fields():
             data.update([(field, params[field])])
 
-        db.insert_log(data)
+        try:
+            db.insert_log(data)
+        finally:
+            response = data
+            return response, 201
 
 
 api.add_resource(Logs, '/log/', '/log')
