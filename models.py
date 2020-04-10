@@ -8,7 +8,7 @@ ActionType = Enum('ActionType', 'click mouseover mouseout scroll')
 class UserAction(models.Model):
     user_id = fields.UUIDField()
     object_type = fields.Enum8Field(ObjectType)
-    object_id = fields.UUIDField()
+    object_id = fields.NullableField(fields.UUIDField())
     action_type = fields.Enum8Field(ActionType)
     value = fields.NullableField(fields.Int32Field(default=None))
     timestamp = fields.UInt64Field()
@@ -24,7 +24,7 @@ class UserAction(models.Model):
 class UserActionBuffer(models.BufferModel, UserAction):
     engine = engines.Buffer(UserAction,
                             num_layers=16,
-                            min_time=10, max_time=100,
+                            min_time=10, max_time=20,
                             min_rows=10000, max_rows=1000000,
                             min_bytes=10000000, max_bytes=100000000)
 
