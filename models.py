@@ -25,8 +25,8 @@ class UserActionBuffer(models.BufferModel, UserAction):
     engine = engines.Buffer(UserAction,
                             num_layers=16,
                             min_time=10, max_time=20,
-                            min_rows=10000, max_rows=1000000,
-                            min_bytes=10000000, max_bytes=100000000)
+                            min_rows=1000, max_rows=100000,
+                            min_bytes=1000000, max_bytes=10000000)
 
     @classmethod
     def table_name(cls):
