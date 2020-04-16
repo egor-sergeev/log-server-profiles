@@ -11,6 +11,7 @@ flask = "*"
 flask-restful = "*"
 flask-cors = "*"
 gunicorn = "*"
+gql = "*"
 
 [requires]
 python_version = "3.6"

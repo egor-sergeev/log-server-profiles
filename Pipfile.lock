@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d682cce4b3813e4cd78015013f370692012d14afe9f69ca3524a48e5157976cb"
+            "sha256": "9e8f0c50b0349de9522e654afa252c151d23cf7833b1db31b84e54d7e3125f03"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -67,6 +67,20 @@
             ],
             "index": "pypi",
             "version": "==0.3.8"
+        },
+        "gql": {
+            "hashes": [
+                "sha256:259b0c66d8dfe61feb06fe45b57713da0fe2e5ca13fa500a1fafc9bf2f195e81"
+            ],
+            "index": "pypi",
+            "version": "==0.4.0"
+        },
+        "graphql-core": {
+            "hashes": [
+                "sha256:74a8f509ae8c4a58271f5d6b46d5c75b4aed116821ab62dea252d8041bfe057a",
+                "sha256:c06e59153246dd48ddbf86ca94a8f045c1b71daf8154b4635e1a0e2e11d9b60b"
+            ],
+            "version": "==2.3.1"
         },
         "gunicorn": {
             "hashes": [
@@ -150,6 +164,12 @@
             ],
             "version": "==1.1.1"
         },
+        "promise": {
+            "hashes": [
+                "sha256:dfd18337c523ba4b6a58801c164c1904a9d4d1b1747c7d5dbf45b693a49d93d0"
+            ],
+            "version": "==2.3"
+        },
         "pytz": {
             "hashes": [
                 "sha256:1c557d7d0e871de1f5ccd5833f60fb2550652da6be2693c1e02300743d21500d",
@@ -163,6 +183,13 @@
                 "sha256:b3f43d496c6daba4493e7c431722aeb7dbc6288f52a6e04e7b6023b0247817e6"
             ],
             "version": "==2.23.0"
+        },
+        "rx": {
+            "hashes": [
+                "sha256:13a1d8d9e252625c173dc795471e614eadfe1cf40ffc684e08b8fff0d9748c23",
+                "sha256:7357592bc7e881a95e0c2013b73326f704953301ab551fbc8133a6fadab84105"
+            ],
+            "version": "==1.6.1"
         },
         "six": {
             "hashes": [
