@@ -3,8 +3,7 @@ from database_interface import DatabaseInterface
 
 def main():
     db = DatabaseInterface(password='password')
-
-    db.create_tables()
+    db.migrate()
 
 
 if __name__ == '__main__':

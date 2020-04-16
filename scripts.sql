@@ -1,7 +1,5 @@
 select *, datetime
 from user_actions_buffer
-where user_id = '127178ff-4fde-4fa0-af36-2b190a8ff188'
-  and action_type = 'scroll'
 order by timestamp;
 
 select uniq(user_id)
@@ -12,7 +10,7 @@ from user_actions_buffer;
 
 
 -- Table size
-select concat(database, '.', table)                         AS table,
+select concat(database, ''.'', table)                       AS table,
        formatReadableSize(sum(bytes))                       AS size,
        sum(bytes)                                           AS bytes_size,
        formatReadableSize(sum(primary_key_bytes_in_memory)) AS primary_keys_size,
@@ -25,14 +23,15 @@ order by bytes_size desc;
 
 
 -- Batch scrolls:
+create view scrolls as
 select user_id,
        object_type,
        null                                                                                     as object_id,
        action_type,
        sum(_value)                                                                              as value,
        min(_timestamp)                                                                          as timestamp,
-       arraySum(length(groupArray(_duration) as dur_arr) > 1 ? arrayPopBack(dur_arr) : dur_arr) as duration,
-       group
+       min(_datetime)                                                                           as datetime,
+       arraySum(length(groupArray(_duration) as dur_arr) > 1 ? arrayPopBack(dur_arr) : dur_arr) as duration
 from (
       select user_id,
              arrayPopBack(groupArray(object_type))            as _object_type,
@@ -40,6 +39,7 @@ from (
              arrayPopBack(groupArray(action_type))            as _action_type,
              arrayPopBack(groupArray(value))                  as _value,
              arrayPopBack(groupArray(timestamp))              as _timestamp,
+             arrayPopBack(groupArray(datetime))               as _datetime,
              arrayPopBack(groupArray(duration))               as _duration,
              arrayPopBack(arrayCumSum(groupArray(new_group))) as _group
       from (
@@ -50,10 +50,11 @@ from (
                    action_type,
                    value,
                    timestamp,
+                   datetime,
                    neighbor(timestamp, 1, 0) - timestamp        as duration,
                    duration <= const_scroll_gap_time_ms ? 0 : 1 as new_group
             from user_actions_buffer
-            where action_type = 'scroll'
+            where action_type = '' scroll ''
             order by user_id, timestamp
                )
       group by user_id
@@ -63,80 +64,133 @@ from (
      _action_type as action_type,
      _value as _value,
      _timestamp as _timestamp,
+     _datetime as _datetime,
      _duration as _duration,
      _group as group
 group by user_id, group, object_type, action_type;
 
 
 -- Batch clicks
+create view clicks as
+    with 10 * 60 * 1000 as click_afk_timeout
+    select user_id,
+           object_type,
+           object_id,
+           action_type,
+           value,
+           timestamp,
+           datetime,
+           duration
+    from (
+          select user_id,
+                 object_type,
+                 object_id,
+                 action_type,
+                 value,
+                 timestamp,
+                 datetime,
+                 user_id = neighbor(user_id, 1) ? (neighbor(timestamp, 1) - timestamp) : 0 as duration
+          from (
+                select user_id, object_type, object_id, action_type, value, timestamp, datetime
+                from user_actions_buffer
+                order by user_id, timestamp
+                   )
+          where action_type = '' click ''
+              or neighbor(action_type
+              , -2) = '' click '' and neighbor(user_id
+              , -2) = user_id
+             )
+    where action_type = ''click''
+  and duration > 0
+  and duration < click_afk_timeout;
 
 
-select user_id,
-       _d,
-       thecumsum
-from (
-      select user_id,
-             d,
-             arrayCumSum(d) as cumsum
-      from (
-            select user_id, groupArray(data) as d
-            from (select arrayJoin([1, 2]) as user_id, arrayJoin([1, 0, 0, 1, 0, 0, 0, 1, 0]) as data)
-            group by user_id
-               )
-         )
-    array Join
-     cumsum AS thecumsum,
-     d as _d;
+-- Batch hovers
+create view hovers as
+    with 30 * 1000 as hover_afk_timeout
+    select user_id,
+           object_type,
+           object_id,
+           CAST('' hover '',
+                '' Enum8(\''click\'' = 1, \''mouseover\'' = 2, \''mouseout\'' = 3, \''scroll\'' = 4, \''hover\'' = 5)
+                '') as action_type,
+           value,
+           timestamp,
+           datetime,
+           duration
+    from (
+          select user_id,
+                 object_type,
+                 object_id,
+                 action_type                                                                          as _action_type,
+                 value,
+                 timestamp,
+                 datetime,
+                 user_id = neighbor(user_id, 1) ? (neighbor(timestamp, 1, timestamp) - timestamp) : 0 as duration
+          from (
+                select user_id, object_type, object_id, action_type, value, timestamp, datetime
+                from user_actions_buffer
+                order by user_id, timestamp
+                   )
+          where action_type in [''mouseover'', ''mouseout'']
+            and neighbor(action_type, 1) != '' click ''
+            and neighbor(action_type
+              , -1) != '' click ''
+             )
+    where _action_type = ''mouseover''
+  and duration < hover_afk_timeout;
 
 
--- Average scroll speed per second
-select user_id, avg(value)
-from (
-      select user_id, sum(value) AS value, intDiv(timestamp, 1000) AS time_group
-      from user_actions_buffer
-      where action_type = 'scroll'
-      group by user_id, time_group
-         )
+-- All batched actions
+create view batched_actions as
+    select *
+    from clicks
+    union all
+    select *
+    from hovers
+    union all
+    select *
+    from scrolls;
+
+
+-- Scroll intensity
+select user_id, sum(value) / sum(duration) as scroll_intensity
+from scrolls
 group by user_id;
 
+-- Average scroll speed
 
--- List of hovered images
-SELECT user_id,
-       object_id,
-       'hover'                               AS action_type,
-       arrayFilter((x, i) -> (i % 2 = 0),
-                   groupArray(runningDifference(data.timestamp)) AS dur_arr,
-                   arrayEnumerate(dur_arr))  AS duration,
-       arrayFilter((x, i) -> (i % 2 = 1),
-                   groupArray(data.timestamp) AS time_arr,
-                   arrayEnumerate(time_arr)) AS timestamp
+-- Percent of back scroll
+with 5000 as const_scroll_jump_px
+select user_id, sum(value < 0 ? -value : 0) / sum(value > 0 ? value : 0)
+from scrolls
+where abs(value) < const_scroll_jump_px
+group by user_id;
 
-FROM (
-         SELECT user_id,
-                object_id,
-                timestamp
-         FROM user_actions_buffer
-         WHERE action_type IN ['mouseover', 'mouseout']
-         ORDER BY user_id,
-                  timestamp
-         ) AS data
-GROUP BY user_id, object_id
-ORDER BY user_id;
+-- Average image view time
+select user_id, cast(avg(duration) as INT)
+from clicks
+group by user_id;
 
+-- TODO посмотреть на изменение времени просмотра картинок
 
--- List of interesting images
-SELECT user_id,
-       object_id,
-       arrayFilter((x, i) -> (i > 0),
-                   groupArray(runningDifference(data.timestamp)) AS dur_arr,
-                   arrayEnumerate(dur_arr)) AS duration,
-       groupArray(data.action_type)         AS action_type
-FROM user_actions_buffer as data
-WHERE data.action_type IN ['mouseover', 'mouseout', 'click']
-GROUP BY user_id, object_id
-ORDER BY user_id;
+-- Total images viewed
+select user_id, groupArray(object_id) as viewed_images, count()
+from clicks
+group by user_id;
 
+-- Images viewed last week
+select user_id, groupArray(object_id) as viewed_images, count()
+from clicks
+where dateDiff('' week '', datetime, now()) < 1
+group by user_id;
 
-select number, neighbor(number, 1) - number
-from system.numbers
-limit 10
+-- Total time spent
+
+-- Average time spent per week
+
+-- Average session time
+
+-- Average amount of sessions per week
+
+-- Average images viewed per session

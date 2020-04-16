@@ -2,7 +2,7 @@ from infi.clickhouse_orm import models, fields, engines
 from enum import Enum
 
 ObjectType = Enum('ObjectType', 'image category author')
-ActionType = Enum('ActionType', 'click mouseover mouseout scroll')
+ActionType = Enum('ActionType', 'click mouseover mouseout scroll hover')
 
 
 class UserAction(models.Model):
