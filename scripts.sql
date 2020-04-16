@@ -10,7 +10,7 @@ from user_actions_buffer;
 
 
 -- Table size
-select concat(database, ''.'', table)                       AS table,
+select concat(database, '.', table)                         AS table,
        formatReadableSize(sum(bytes))                       AS size,
        sum(bytes)                                           AS bytes_size,
        formatReadableSize(sum(primary_key_bytes_in_memory)) AS primary_keys_size,
@@ -54,7 +54,7 @@ from (
                    neighbor(timestamp, 1, 0) - timestamp        as duration,
                    duration <= const_scroll_gap_time_ms ? 0 : 1 as new_group
             from user_actions_buffer
-            where action_type = '' scroll ''
+            where action_type = 'scroll'
             order by user_id, timestamp
                )
       group by user_id
@@ -72,85 +72,81 @@ group by user_id, group, object_type, action_type;
 
 -- Batch clicks
 create view clicks as
-    with 10 * 60 * 1000 as click_afk_timeout
-    select user_id,
-           object_type,
-           object_id,
-           action_type,
-           value,
-           timestamp,
-           datetime,
-           duration
-    from (
-          select user_id,
-                 object_type,
-                 object_id,
-                 action_type,
-                 value,
-                 timestamp,
-                 datetime,
-                 user_id = neighbor(user_id, 1) ? (neighbor(timestamp, 1) - timestamp) : 0 as duration
-          from (
-                select user_id, object_type, object_id, action_type, value, timestamp, datetime
-                from user_actions_buffer
-                order by user_id, timestamp
-                   )
-          where action_type = '' click ''
-              or neighbor(action_type
-              , -2) = '' click '' and neighbor(user_id
-              , -2) = user_id
-             )
-    where action_type = ''click''
+with 10 * 60 * 1000 as click_afk_timeout
+select user_id,
+       object_type,
+       object_id,
+       action_type,
+       value,
+       timestamp,
+       datetime,
+       duration
+from (
+      select user_id,
+             object_type,
+             object_id,
+             action_type,
+             value,
+             timestamp,
+             datetime,
+             user_id = neighbor(user_id, 1) ? (neighbor(timestamp, 1) - timestamp) : 0 as duration
+      from (
+            select user_id, object_type, object_id, action_type, value, timestamp, datetime
+            from user_actions_buffer
+            order by user_id, timestamp
+               )
+      where action_type = 'click'
+         or neighbor(action_type, -2) = 'click' and neighbor(user_id, -2) = user_id
+         )
+where action_type = 'click'
   and duration > 0
   and duration < click_afk_timeout;
 
 
 -- Batch hovers
 create view hovers as
-    with 30 * 1000 as hover_afk_timeout
-    select user_id,
-           object_type,
-           object_id,
-           CAST('' hover '',
-                '' Enum8(\''click\'' = 1, \''mouseover\'' = 2, \''mouseout\'' = 3, \''scroll\'' = 4, \''hover\'' = 5)
-                '') as action_type,
-           value,
-           timestamp,
-           datetime,
-           duration
-    from (
-          select user_id,
-                 object_type,
-                 object_id,
-                 action_type                                                                          as _action_type,
-                 value,
-                 timestamp,
-                 datetime,
-                 user_id = neighbor(user_id, 1) ? (neighbor(timestamp, 1, timestamp) - timestamp) : 0 as duration
-          from (
-                select user_id, object_type, object_id, action_type, value, timestamp, datetime
-                from user_actions_buffer
-                order by user_id, timestamp
-                   )
-          where action_type in [''mouseover'', ''mouseout'']
-            and neighbor(action_type, 1) != '' click ''
-            and neighbor(action_type
-              , -1) != '' click ''
-             )
-    where _action_type = ''mouseover''
+with 30 * 1000 as hover_afk_timeout
+select user_id,
+       object_type,
+       object_id,
+       CAST('hover',
+            'Enum8(\'click\' = 1, \'mouseover\' = 2, \'mouseout\' = 3, \'scroll\' = 4, \'hover\' = 5)') as action_type,
+       value,
+       timestamp,
+       datetime,
+       duration
+from (
+      select user_id,
+             object_type,
+             object_id,
+             action_type                                                                          as _action_type,
+             value,
+             timestamp,
+             datetime,
+             user_id = neighbor(user_id, 1) ? (neighbor(timestamp, 1, timestamp) - timestamp) : 0 as duration
+      from (
+            select user_id, object_type, object_id, action_type, value, timestamp, datetime
+            from user_actions_buffer
+            order by user_id, timestamp
+               )
+      where action_type in ['mouseover', 'mouseout']
+        and neighbor(action_type, 1) != 'click'
+        and neighbor(action_type, -1) != 'click'
+         )
+where _action_type = 'mouseover'
   and duration < hover_afk_timeout;
 
 
 -- All batched actions
 create view batched_actions as
-    select *
-    from clicks
-    union all
-    select *
-    from hovers
-    union all
-    select *
-    from scrolls;
+select *
+from clicks
+union all
+select *
+from hovers
+union all
+select *
+from scrolls;
 
 
 -- Scroll intensity
@@ -182,7 +178,7 @@ group by user_id;
 -- Images viewed last week
 select user_id, groupArray(object_id) as viewed_images, count()
 from clicks
-where dateDiff('' week '', datetime, now()) < 1
+where dateDiff('week', datetime, now()) < 1
 group by user_id;
 
 -- Total time spent
