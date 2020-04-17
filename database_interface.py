@@ -8,12 +8,15 @@ class DatabaseInterface:
         if self.db.does_table_exist(UserActionBuffer) and self.db.does_table_exist(UserAction):
             self._fields = self.get_fields()
 
-    def drop_tables(self):
+    def migrate(self):
+        self.db.migrate('migrations')
+
+    def _drop_tables(self):
         self.db.drop_table(UserAction)
         self.db.drop_table(UserActionBuffer)
         self._fields = None
 
-    def create_tables(self):
+    def _create_tables(self):
         self.db.create_table(UserAction)
         self.db.create_table(UserActionBuffer)
         self._fields = self.get_fields()
