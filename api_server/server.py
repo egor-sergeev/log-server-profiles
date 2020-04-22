@@ -1,7 +1,7 @@
 from flask import Flask, render_template
 from flask_restful import Resource, Api, reqparse
 from flask_cors import CORS
-from database_interface import DatabaseInterface
+from data_manipulation.database_interface import DatabaseInterface
 
 app = Flask(__name__)
 api = Api(app)

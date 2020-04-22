@@ -31,3 +31,19 @@ class UserActionBuffer(models.BufferModel, UserAction):
     @classmethod
     def table_name(cls):
         return 'user_actions_buffer'
+
+
+class Backup(models.Model):
+    user_id = fields.UUIDField()
+    object_type = fields.Enum8Field(ObjectType)
+    object_id = fields.NullableField(fields.UUIDField())
+    action_type = fields.Enum8Field(ActionType)
+    value = fields.NullableField(fields.Int32Field(default=None))
+    timestamp = fields.UInt64Field()
+    datetime = fields.DateTimeField(materialized='Cast(timestamp / 1000 AS DateTime)')
+
+    engine = engines.MergeTree('datetime', ('user_id', 'timestamp'))
+
+    @classmethod
+    def table_name(cls):
+        return 'backup'

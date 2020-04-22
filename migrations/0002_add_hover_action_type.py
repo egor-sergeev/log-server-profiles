@@ -1,5 +1,5 @@
 from infi.clickhouse_orm import migrations
-from models import UserActionBuffer
+from data_manipulation.models import UserActionBuffer
 
 operations = [
     migrations.AlterTableWithBuffer(UserActionBuffer)

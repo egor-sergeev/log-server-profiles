@@ -1,4 +1,4 @@
-from database_interface import DatabaseInterface
+from data_manipulation.database_interface import DatabaseInterface
 
 
 def main():

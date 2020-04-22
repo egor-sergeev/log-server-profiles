@@ -1,5 +1,5 @@
 from infi.clickhouse_orm.database import Database
-from models import UserAction, UserActionBuffer
+from data_manipulation.models import UserAction, UserActionBuffer
 from gql.transport.requests import RequestsHTTPTransport
 from gql import gql, Client
 
@@ -86,7 +86,8 @@ class DatabaseInterface:
             }}
         '''
 
-        response = [self._gql_client.execute(gql(query.format(self._map_object_id(str(image_id))))) for image_id in image_id_list]
+        response = [self._gql_client.execute(gql(query.format(self._map_object_id(str(image_id)))))
+                    for image_id in image_id_list]
         return response
 
     def _map_object_id(self, object_id):
