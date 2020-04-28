@@ -1,10 +1,8 @@
-from .database_interface import DatabaseInterface
 from .sql_queries import Query
 from io import StringIO
 import pandas as pd
 from gql.transport.requests import RequestsHTTPTransport
 from gql import gql, Client
-import re
 
 
 class SemanticResolver:
@@ -38,12 +36,13 @@ class SemanticResolver:
 
     def get_semantic(self):
         # Reading images viewed by users:
-        df = self.get_viewed_images()
+        df = self._get_viewed_images()
 
         df = df.set_index(['user_id']).apply(pd.Series.explode).reset_index()
 
         # Reading meta data from Graphica's DB via GQL:
-        meta_data = self.get_metadata(list(df['image_id'].unique()))
+        images = list(df['image_id'].unique())
+        meta_data = self._get_metadata(images)
 
         # Categories to list:
         df_images = pd.DataFrame(meta_data)
@@ -58,26 +57,23 @@ class SemanticResolver:
 
         # Grouping authors:
         df_users_authors = self._group_array_top(df[['user_id', 'author', 'image_id']], 'user_id', 'author', 'image_id',
-                                                 amount=3)
+                                                 amount=5)
 
         # Grouping categories:
         df_users_categories = self._group_array_top(df[['user_id', 'categories', 'image_id']].explode('categories'),
-                                                    'user_id', 'categories', 'image_id', amount=3)
+                                                    'user_id', 'categories', 'image_id', amount=5)
 
         df = df_users_authors.merge(df_users_categories, on='user_id')
 
-        return df
+        return df.rename({'author': 'top_authors_with_views', 'categories': 'top_categories_with_views'})
 
-    def get_viewed_images(self):
+    def _get_viewed_images(self):
         df = pd.read_csv(StringIO(self._db.raw(Query.Images.viewed_images)), sep='\t')
         df['image'] = df['viewed_images'].map(self._str_to_list)
         df['duration'] = df['duration'].map(self._str_to_list)
         df = df.drop('viewed_images', axis=1)
         df.rename({'image': 'image_id'}, axis=1, inplace=True)
         return df
-
-    def get_metadata(self, images):
-        return self._db.get_metadata(images)
 
     @staticmethod
     def _group_array_top(df, groupby_cols, value_col, sum_col, amount=5):

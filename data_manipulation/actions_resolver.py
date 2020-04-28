@@ -27,4 +27,14 @@ class ActionsResolver:
             data = pd.read_csv(StringIO(self._db.raw(query)), sep='\t', index_col='user_id')
             df = df.join(data)
 
+        cols_to_fill = ['avg_views_per_session',
+                        'amount_of_viewed_images',
+                        'amount_of_viewed_images_last_week',
+                        'sessions_amount',
+                        'avg_session_duration',
+                        'avg_views_amount_per_session',
+                        'avg_sessions_per_active_week']
+
+        df[cols_to_fill] = df[cols_to_fill].fillna(0.0)
+
         return df
