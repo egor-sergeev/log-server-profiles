@@ -25,13 +25,15 @@ class DatabaseInterface:
             fetch_schema_from_transport=True
         )
 
-        self._map_id = {}
+        self._map_id_to_graphica = {}
+        self._map_id_to_inspo = {}
 
-        with open('object_id_map.txt', 'r') as f:
+        with open('data_manipulation/object_id_map.txt', 'r') as f:
             lines = f.read().splitlines()
             for l in lines:
                 p = l.split(' ')
-                self._map_id[p[0]] = p[1]
+                self._map_id_to_graphica[p[0]] = p[1]
+                self._map_id_to_inspo[p[1]] = p[0]
 
     def get_fields(self):
         if not self.db.db_exists:
@@ -54,7 +56,13 @@ class DatabaseInterface:
         self.db.insert([log_entry])
 
     def select(self, query):
+        query = query.strip().strip(';')
         return self.db.select(query)
+
+    def raw(self, query):
+        query = query.strip().strip(';')
+        query = "{} FORMAT TabSeparatedWithNames".format(query)
+        return self.db.raw(query, stream=True)
 
     def get_metadata(self, image_id_list):
         image_id_list = image_id_list if type(image_id_list) == list else [image_id_list]
@@ -65,10 +73,6 @@ class DatabaseInterface:
                 id
                 title
                 authorName
-                comment
-                tokens{{
-                  name
-                }}
                 categories{{
                   id
                   name
@@ -81,17 +85,19 @@ class DatabaseInterface:
                     }}
                   }}
                 }}
-                updatedAt
               }}
             }}
         '''
 
-        response = [self._gql_client.execute(gql(query.format(self._map_object_id(str(image_id)))))
+        response = [self._gql_client.execute(gql(query.format(self._map_object_id_to_graphica(str(image_id)))))['file']
                     for image_id in image_id_list]
         return response
 
-    def _map_object_id(self, object_id):
-        return self._map_id[object_id]
+    def _map_object_id_to_graphica(self, object_id):
+        return self._map_id_to_graphica[object_id]
+
+    def _map_object_id_to_inspo(self, object_id):
+        return self._map_id_to_inspo[object_id]
 
     # def _drop_tables(self):
     #     self.db.drop_table(UserAction)

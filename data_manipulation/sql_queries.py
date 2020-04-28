@@ -1,4 +1,11 @@
 class Query:
+
+    initial = '''
+        select user_id
+        from user_actions_buffer
+        group by user_id
+    '''
+
     class Scroll:
         intensity = '''
             select user_id, sum(value) / sum(duration) as scroll_intensity
@@ -36,44 +43,41 @@ class Query:
             group by user_id
         '''
 
-        avg_per_week = '''
-            select user_id, min(timestamp) as session_start
-            from sessions
-            group by user_id, session_id
-        '''
-
         avg_image_view = '''
             select user_id, avg(duration) / 1000 as avg_image_view_time
             from clicks
             group by user_id
         '''
 
-        avg_session = '''
-            select user_id, count() as sessions_amount, intDiv(avg(session_duration), 1000) as avg_session_duration
-            from (
-                  select user_id, max(timestamp) - min(timestamp) as session_duration
-                  from sessions
-                  group by user_id, session_id
-                     )
+    class Images:
+        viewed_images = '''
+            select user_id, groupArray(object_id) as viewed_images, groupArray(duration) as duration
+            from clicks
             group by user_id
         '''
 
-    class Images:
-        viewed_images = '''
-            select user_id, groupArray(object_id) as viewed_images, count() as amount
+        amount_of_viewed_images = '''
+            select user_id, count() as amount_of_viewed_images
             from clicks
             group by user_id
         '''
 
         viewed_images_last_week = '''
-            select user_id, groupArray(object_id) as viewed_images_last_week, count() as amount
+            select user_id, groupArray(object_id) as viewed_images_last_week
+            from clicks
+            where dateDiff('week', datetime, now()) < 1
+            group by user_id
+        '''
+
+        amount_of_viewed_images_last_week = '''
+            select user_id, count() as amount_of_viewed_images_last_week
             from clicks
             where dateDiff('week', datetime, now()) < 1
             group by user_id
         '''
 
         avg_images_viewed_per_session = '''
-            select user_id, avg(clicks_amount) as avg_clicks_amount
+            select user_id, avg(clicks_amount) as avg_views_per_session
             from (
                   select user_id, count() as clicks_amount
                   from sessions
@@ -91,7 +95,7 @@ class Query:
         '''
 
         avg_session_time = '''
-            select user_id, count() as sessions_amount, intDiv(avg(session_duration), 1000) as avg_session_duration
+            select user_id, intDiv(avg(session_duration), 1000) as avg_session_duration
             from (
                   select user_id, max(timestamp) - min(timestamp) as session_duration
                   from sessions
@@ -101,7 +105,7 @@ class Query:
         '''
 
         avg_images_viewed_per_session = '''
-            select user_id, avg(clicks_amount) as avg_clicks_amount
+            select user_id, avg(clicks_amount) as avg_views_amount_per_session
             from (
                   select user_id, count() as clicks_amount
                   from sessions
@@ -112,7 +116,7 @@ class Query:
         '''
 
         avg_sessions_per_week = '''
-            select user_id, avg(sessions_amount) as avg_sessions_per_week
+            select user_id, avg(sessions_amount) as avg_sessions_per_active_week
             from (
                   select user_id, count() as sessions_amount
                   from (
