@@ -12,6 +12,8 @@ flask-restful = "*"
 flask-cors = "*"
 gunicorn = "*"
 gql = "*"
+pandas = "*"
+apscheduler = "*"
 
 [requires]
 python_version = "3.6"

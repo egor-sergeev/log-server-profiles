@@ -1,8 +1,8 @@
-from .sql_queries import Query
 from io import StringIO
 import pandas as pd
 from gql.transport.requests import RequestsHTTPTransport
 from gql import gql, Client
+from .sql_queries import Query
 
 
 class SemanticResolver:

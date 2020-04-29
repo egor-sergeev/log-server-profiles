@@ -3,8 +3,8 @@ from data_manipulation.models import UserAction, UserActionBuffer
 
 
 class DatabaseInterface:
-    def __init__(self, username='default', password=''):
-        self.db = Database('default', db_url='http://167.172.39.249:8123', username=username, password=password)
+    def __init__(self, username='default', password='', url='http://127.0.0.1:8123'):
+        self.db = Database('default', db_url=url, username=username, password=password)
         if self.db.does_table_exist(UserActionBuffer) and self.db.does_table_exist(UserAction):
             self._fields = self.get_fields()
 

@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-
 from .semantic_resolver import SemanticResolver
 from .actions_resolver import ActionsResolver
 
@@ -27,6 +26,11 @@ class Profiles:
 
     def load_profiles(self, file_name):
         self._profiles = pd.read_csv(self._resolve_filename(file_name), sep='\t', index_col=0)
+
+    @staticmethod
+    def get_saved_profiles_names():
+        outdir = './profiles'
+        return [f for f in os.listdir(outdir) if os.path.isfile(os.path.join(outdir, f)) and f.endswith('.csv')]
 
     @staticmethod
     def _resolve_filename(file_name):

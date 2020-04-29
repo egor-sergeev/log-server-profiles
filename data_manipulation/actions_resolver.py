@@ -1,6 +1,6 @@
-from data_manipulation.sql_queries import Query
 import pandas as pd
 from io import StringIO
+from data_manipulation.sql_queries import Query
 
 
 class ActionsResolver:
