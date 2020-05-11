@@ -19,7 +19,7 @@ class Profiles:
         semantic = self._semantic_resolver.get_semantic()
         attributes = self._actions_resolver.get_attributes()
 
-        self._profiles = attributes.merge(semantic, on='user_id')
+        self._profiles = attributes.merge(semantic, on='user_id', how='left').fillna(value=pd.np.nan)
 
     def save_profiles(self, file_name):
         self._profiles.to_csv(self._resolve_filename(file_name), sep='\t')
