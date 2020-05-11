@@ -1,5 +1,6 @@
 from io import StringIO
 import pandas as pd
+import numpy as np
 from gql.transport.requests import RequestsHTTPTransport
 from gql import gql, Client
 from .sql_queries import Query
@@ -65,7 +66,8 @@ class SemanticResolver:
 
         df = df_users_authors.merge(df_users_categories, on='user_id')
 
-        return df.rename({'author': 'top_authors_with_views', 'categories': 'top_categories_with_views'})
+        df.rename(columns={'author': 'top_authors_with_views', 'categories': 'top_categories_with_views'}, inplace=True)
+        return df
 
     def _get_viewed_images(self):
         df = pd.read_csv(StringIO(self._db.raw(Query.Images.viewed_images)), sep='\t')
@@ -84,7 +86,11 @@ class SemanticResolver:
             .apply(lambda x: x.nlargest(amount, sum_col, keep='all')) \
             .set_index(groupby_cols).reset_index()
 
+        variance = res.groupby(groupby_cols, as_index=False) \
+                      .agg(lambda arr: 1 - np.std(arr) / np.mean(arr))[sum_col]
+
         res = res.groupby(groupby_cols).agg(list).reset_index()
+        res[value_col + '_breadth_of_interest'] = variance
         res[value_col] = list(map(list, map(zip, res[value_col], res[sum_col])))
 
         return res.drop(sum_col, axis=1)
