@@ -16,7 +16,7 @@ class Query:
         avg_speed = '''
             select user_id, avg(scroll_amount) * 1000 / avg(session_duration) as avg_px_scrolled_per_second
             from (
-                  select user_id, sum(value) as scroll_amount, max(timestamp) - min(timestamp) as session_duration
+                  select user_id, sum(value) as scroll_amount, max(timestamp) - min(timestamp) > 0 ? max(timestamp) - min(timestamp) : any(duration) as session_duration
                   from sessions
                   where action_type = 'scroll'
                   group by user_id, session_id
