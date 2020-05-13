@@ -14,6 +14,7 @@ gunicorn = "*"
 gql = "*"
 pandas = "*"
 apscheduler = "*"
+sklearn = "*"
 
 [requires]
 python_version = "3.6"

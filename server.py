@@ -69,6 +69,16 @@ def get_profiles_with_update():
     return profiles.get_profiles().to_json(), 200
 
 
+@app.route('/clustered-profiles', methods=['GET'])
+def get_clustered_profiles():
+    p = profiles.get_profiles()
+    if p is None:
+        profiles.update_profiles()
+
+    profiles.update_clustered_profiles()
+    return profiles.get_clustered_profiles().to_json(), 200
+
+
 @app.route('/docs')
 def render_static():
     return render_template('index.html')
@@ -76,7 +86,7 @@ def render_static():
 
 # Profiles update scheduler:
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=profiles.update_profiles, trigger='interval', minutes=1)
+scheduler.add_job(func=profiles.update_profiles, trigger='interval', hours=3)
 scheduler.start()
 
 atexit.register(lambda: scheduler.shutdown())
