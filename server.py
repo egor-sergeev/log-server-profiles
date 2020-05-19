@@ -79,6 +79,16 @@ def get_clustered_profiles():
     return profiles.get_clustered_profiles().to_json(), 200
 
 
+@app.route('/segments', methods=['GET'])
+def get_segments():
+    p = profiles.get_clusters_description()
+    if p is None:
+        profiles.update_profiles()
+
+    profiles.update_clustered_profiles()
+    return profiles.get_clusters_description().to_json(), 200
+
+
 @app.route('/docs')
 def render_static():
     return render_template('index.html')
