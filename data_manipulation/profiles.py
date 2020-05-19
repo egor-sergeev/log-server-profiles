@@ -59,8 +59,6 @@ class Profiles:
         data = data.sort_values('cluster').round(3)
 
         centers = pd.DataFrame(scaler.inverse_transform(ms.cluster_centers_), columns=columns).round(3)
-        centers = centers.reset_index().merge(data['cluster'].value_counts().reset_index(), on='index')
-        centers = centers.rename({'cluster': 'users_count'}, axis=1).drop('index', axis=1)
 
         interests_df = data[['user_id', 'cluster']].merge(self._profiles[['user_id',
                                                                           'top_authors_with_views',
@@ -69,6 +67,13 @@ class Profiles:
 
         centers['top_categories'] = [self._unite_interests(line) for line in interests_df['top_categories_with_views']]
         centers['top_authors'] = [self._unite_interests(line) for line in interests_df['top_authors_with_views']]
+
+        centers = centers.reset_index().merge(data['cluster'].value_counts().reset_index(), on='index')
+        centers = centers.rename({'cluster': 'users_count'}, axis=1).drop('index', axis=1)
+
+        ids = data[['user_id', 'cluster']].groupby('cluster').agg(list)
+        del ids.index.name
+        centers = centers.reset_index().merge(ids.reset_index(), on='index')
 
         self._clustered_profiles = centers
 
