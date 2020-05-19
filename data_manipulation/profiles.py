@@ -13,6 +13,7 @@ class Profiles:
         self._db = db_interface
         self._profiles = None
         self._clustered_profiles = None
+        self._clusters_description = None
         self._semantic_resolver = SemanticResolver(self._db)
         self._actions_resolver = ActionsResolver(self._db)
 
@@ -33,6 +34,50 @@ class Profiles:
 
     def get_clustered_profiles(self):
         return self._clustered_profiles
+
+    def get_clusters_description(self):
+        return self._clusters_description
+
+    def update_clusters_description(self):
+        def attention(c):
+            a = 0
+            a += 1 if c['scroll_intensity'] < 0.05 else -1
+            a += 1 if c['avg_px_scrolled_per_second'] < 150 else -1
+            a += 1 if c['back_scroll_fraction'] > 0 else 0
+            a += 1 if c['avg_image_view_time'] > 5 else -1
+            return a
+
+        def involvement(c):
+            i = 0
+            i += -5 if c['amount_of_viewed_images'] == 0 else 0
+            i += 2 if c['avg_session_duration'] > 300 else 0 if c['avg_session_duration'] > 7 else -2
+            return i
+
+        def experience(c):
+            e = 0
+            e += 1 if 50 < c['avg_px_scrolled_per_second'] < 150 else 0
+            if c['amount_of_viewed_images'] > 0:
+                e += 2 if c['categories_breadth_of_interest'] < 0.6 else 0
+                e += 2 if c['author_breadth_of_interest'] < 0.6 else 0
+            return e
+
+        def scale_attr_value(x):
+            if x < -1:
+                return 'low'
+            elif x <= 1:
+                return 'mean'
+            else:
+                return 'high'
+
+        res = None
+        df = self.get_clustered_profiles()
+        if df is not None:
+            res = pd.DataFrame()
+            res['attention'] = df.apply(attention, axis=1).apply(scale_attr_value)
+            res['involvement'] = df.apply(involvement, axis=1).apply(scale_attr_value)
+            res['experience'] = df.apply(experience, axis=1).apply(scale_attr_value)
+
+        self._clusters_description = res
 
     def update_clustered_profiles(self):
         columns = ['scroll_intensity',
@@ -77,6 +122,7 @@ class Profiles:
         centers.drop('index', axis=1, inplace=True)
 
         self._clustered_profiles = centers
+        self.update_clusters_description()
 
     @staticmethod
     def _unite_interests(arr):
