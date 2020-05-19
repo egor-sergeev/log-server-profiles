@@ -77,6 +77,7 @@ class Profiles:
             res['involvement'] = df.apply(involvement, axis=1).apply(scale_attr_value)
             res['experience'] = df.apply(experience, axis=1).apply(scale_attr_value)
 
+        res.merge(df['user_id'], left_index=True, right_index=True)
         self._clusters_description = res
 
     def update_clustered_profiles(self):
