@@ -72,8 +72,9 @@ class Profiles:
         centers = centers.rename({'cluster': 'users_count'}, axis=1).drop('index', axis=1)
 
         ids = data[['user_id', 'cluster']].groupby('cluster').agg(list)
-        del ids.index.name
+        ids.index.name = None
         centers = centers.reset_index().merge(ids.reset_index(), on='index')
+        centers.drop('index', axis=1, inplace=True)
 
         self._clustered_profiles = centers
 
